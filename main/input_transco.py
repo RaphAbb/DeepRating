@@ -54,13 +54,13 @@ def prop_type_trsc(test_set, train_set, label):
     
     
 
-if __name__ == "main":
+if __name__ == "__main__":
     orig_col = ['fico','dt_first_pi','flag_fthb','dt_matr','cd_msa',"mi_pct",'cnt_units','occpy_sts',\
                   'cltv','dti','orig_upb','ltv','int_rt','channel','ppmt_pnlty','prod_type','st', \
                   'prop_type','zipcode','loan_purpose', 'orig_loan_term','cnt_borr','seller_name'\
                   ,'servicer_name', 'flag_sc']
     
-    orig_data = pd.read_csv('sample_orig_2017.txt', header = None, sep = '|', index_col = 19)
+    orig_data = pd.read_csv('sample_orig_2016.txt', header = None, sep = '|', index_col = 19)
     orig_data.columns = orig_col
 
     
