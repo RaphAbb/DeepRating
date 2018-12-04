@@ -188,7 +188,7 @@ def compute_cost(Z3, Y):
     
     return cost
 
-def model(X_train, Y_train, learning_rate = 0.0001,
+def model(X_train, Y_train, X_test, Y_test, costs, learning_rate = 0.001,#learning_rate = 0.0001,
           num_epochs = 1500, minibatch_size = 32, print_cost = True):
     """
     A three-layer tensorflow neural network: LINEAR->RELU->LINEAR->RELU->LINEAR->SOFTMAX.
@@ -208,7 +208,6 @@ def model(X_train, Y_train, learning_rate = 0.0001,
     ops.reset_default_graph()
     (n_x, m) = X_train.shape
     n_y = Y_train.shape[0]
-    costs = []
     
     X, Y = create_placeholders(n_x, n_y)
 
@@ -260,12 +259,14 @@ def model(X_train, Y_train, learning_rate = 0.0001,
         print ("Parameters have been trained!")
 
         # Calculate the correct predictions
-        correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))
+        #correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))
+        correct_prediction = tf.equal(tf.argmax(Z3[1:,]), tf.argmax(Y[1:,]))
 
         # Calculate accuracy on the test set
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
         print ("Train Accuracy:", accuracy.eval({X: X_train, Y: Y_train}))
+        print ("Test Accuracy:", accuracy.eval({X: X_test, Y: Y_test}))
         
         return parameters
     
@@ -289,6 +290,8 @@ if __name__ == "__main__":
     mth_data = pd.read_csv('sample_svcg_2016.txt', header = None, sep = '|')
     Y_train = data_processor.get_training_output(mth_data)
     Y_train = Y_train.reindex(X_train.index)
+    #PB here, so add this line in meantine
+    Y_train = Y_train.fillna(0)
     
     #Transpose format, switch to numpy
     X_train = X_train.T.values
@@ -297,10 +300,35 @@ if __name__ == "__main__":
     Y_train = Y_train.astype(int)
     Y_train = convert_to_one_hot(Y_train, 7)
     
-    #
-    n_x = X_train.shape[0]
-    n_y = Y_train.shape[0]
-    X, Y = create_placeholders(n_x, n_y)
+    #parameters = model(X_train, Y_train)
     
-    parameters = model(X_train, Y_train)
+    
+    #Test Set
+    orig_data_test = pd.read_csv('sample_orig_2017.txt', header = None, sep = '|', index_col = 19)
+    orig_data_test.columns = orig_col
+    
+    #Transforming string values to Numerical Values
+    string_labels = ['flag_fthb','occpy_sts','channel','ppmt_pnlty','prod_type','st', \
+                  'prop_type','loan_purpose','seller_name','servicer_name', 'flag_sc']
+    X_test= input_transco.label_to_num(orig_data_test, string_labels)
+    X_test = X_test.fillna(0)
+    
+    #Getting the ouput for the Training Set
+    mth_data_test = pd.read_csv('sample_svcg_2017.txt', header = None, sep = '|')
+    Y_test = data_processor.get_test_output(mth_data_test)
+    Y_test = Y_test.reindex(X_test.index)
+    #PB here, so add this line in meantine
+    Y_test = Y_test.fillna(0)
+
+    #Transpose format, switch to numpy
+    X_test = X_test.T.values
+    Y_test = Y_test.T.values
+    
+    Y_test = Y_test.astype(int)
+    Y_test = convert_to_one_hot(Y_test, 7)
+    
+    costs = []
+    parameters = model(X_train, Y_train, X_test, Y_test, costs)
+    
+    
     

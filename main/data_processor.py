@@ -28,16 +28,23 @@ orig_data.columns = orig_col
 
 def get_training_output(mth_data):
     ''' Outputs management
+        Arguments:
+        mth_data -- raw data frame of monthly data for all loans ID
+        
+        Returns:
+        Y_train, training outputs of shape (C = 7: number of classes, m: number of loans ID)
+        
+        Notes:
         9th column is the zero balance type
         10th column is the zero balance effective date
     '''
     
     ####Getting Training Ouputs
     #Selecting the data before 2018
-    train_set = mth_data[np.around(mth_data[1]/100, decimals=1) != 2018]
-    #Getting the list of defaulting loans IDs
+    train_set = mth_data[np.around(mth_data[1]/100, decimals=1) <2017]
+    #Getting the list of defaulting loans IDs, by looking if the defaulting date is empty or not
     dflt_loans = train_set[train_set[9].notnull()][0]
-    #Getting the associated zero balance code
+    #Getting the associated zero balance code, when the defaulting date is not empty
     dflt_code = np.around(train_set[train_set[9].notnull()][8])
     
     #Non defaulting loans IDs
@@ -47,13 +54,25 @@ def get_training_output(mth_data):
     Y_train = pd.DataFrame(data = dflt_code.values, index = dflt_loans)
     #We add the code 0 for a non-defaulting loan over the time priod considered
     Y_train = Y_train.append(non_dflt_loans).fillna(0)
+    Y_train.columns = ["outputs"]
     
     return Y_train
 
 def get_test_output(mth_data):
+    ''' Outputs management
+        Arguments:
+        mth_data -- raw data frame of monthly data for all loans ID
+        
+        Returns:
+        Y_test, training outputs of shape (C = 7: number of classes, m: number of loans ID)
+        
+        Notes:
+        9th column is the zero balance type
+        10th column is the zero balance effective date
+    '''
     ####Getting Test Ouputs
     #Selecting the data after 2018
-    test_set = mth_data[np.around(mth_data[1]/100, decimals=1) == 2018]
+    test_set = mth_data[np.around(mth_data[1]/100, decimals=1) == 2017]
     #Getting the list of defaulting loans IDs
     dflt_loans = test_set[test_set[9].notnull()][0]
     #Getting the associated zero balance code
@@ -65,6 +84,7 @@ def get_test_output(mth_data):
     Y_test = pd.DataFrame(data = dflt_code.values, index = dflt_loans)
     #We add the code 0 for a non-defaulting loan over the time priod considered
     Y_test = Y_test.append(non_dflt_loans).fillna(0)
+    Y_test.columns = ["outputs"]
     
     return Y_test
 

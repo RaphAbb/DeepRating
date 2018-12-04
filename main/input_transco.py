@@ -38,20 +38,6 @@ def label_to_num(train_set, string_labels):
     
     return train_set
     
-def prop_type_trsc(test_set, train_set, label):
-    """
-    Get the Property State from String to Numeric for the Test Set
-                     
-    Arguments:
-    test_set
-    train_set
-    label -- the label of the input we want to transform
-    
-    Returns: 
-    data with numerical value for Property Type
-    """
-    pass
-    
     
 
 if __name__ == "__main__":
