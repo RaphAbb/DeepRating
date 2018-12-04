@@ -75,6 +75,200 @@ def one_hot_matrix(labels, C):
 
     return one_hot
 
+def ones(shape):
+    """
+    Creates an array of ones of dimension shape
+    
+    Arguments:
+    shape -- shape of the array you want to create
+        
+    Returns: 
+    ones -- array containing only ones
+    """
+    
+    ones = tf.ones(shape)
+    
+    sess = tf.Session()
+
+    ones = sess.run(ones)
+
+    sess.close()
+
+    return ones
+
+def create_placeholders(n_x, n_y):
+    """
+    Creates the placeholders for the tensorflow session.
+    
+    Arguments:
+    n_x -- scalar, number of criterias
+    n_y -- scalar, number of classes
+    
+    Returns:
+    X -- placeholder for the data input, of shape [n_x, None] and dtype "float"
+    Y -- placeholder for the input labels, of shape [n_y, None] and dtype "float"
+    
+    - We use None because it let's us be flexible on the number of examples you will for the placeholders.
+    """
+
+    X = tf.placeholder(tf.float32, [n_x, None])
+    Y = tf.placeholder(tf.float32, [n_y, None])
+    
+    return X, Y
+
+def initialize_parameters(n_x, n_y):
+    """
+    Initializes parameters to build a neural network with tensorflow.
+    
+    Returns:
+    parameters -- a dictionary of tensors containing W1, b1, W2, b2, W3, b3
+    """
+        
+    W1 = tf.get_variable("W1", [18,n_x], initializer = tf.contrib.layers.xavier_initializer(seed = 1))
+    b1 = tf.get_variable("b1", [18,1], initializer = tf.zeros_initializer())
+    W2 = tf.get_variable("W2", [12,18], initializer = tf.contrib.layers.xavier_initializer(seed = 1))
+    b2 = tf.get_variable("b2", [12,1], initializer = tf.zeros_initializer())
+    W3 = tf.get_variable("W3", [n_y,12], initializer = tf.contrib.layers.xavier_initializer(seed = 1))
+    b3 = tf.get_variable("b3", [n_y,1], initializer = tf.zeros_initializer())
+
+    parameters = {"W1": W1,
+                  "b1": b1,
+                  "W2": W2,
+                  "b2": b2,
+                  "W3": W3,
+                  "b3": b3}
+    
+    return parameters
+
+def forward_propagation(X, parameters):
+    """
+    Implements the forward propagation for the model: LINEAR -> RELU -> LINEAR -> RELU -> LINEAR -> SOFTMAX
+    
+    Arguments:
+    X -- input dataset placeholder, of shape (input size, number of examples)
+    parameters -- python dictionary containing your parameters "W1", "b1", "W2", "b2", "W3", "b3"
+                  the shapes are given in initialize_parameters
+
+    Returns:
+    Z3 -- the output of the last LINEAR unit
+    """
+    
+    W1 = parameters['W1']
+    b1 = parameters['b1']
+    W2 = parameters['W2']
+    b2 = parameters['b2']
+    W3 = parameters['W3']
+    b3 = parameters['b3']
+    
+    Z1 = tf.add(tf.matmul(W1,X), b1)
+    A1 = tf.nn.relu(Z1)
+    Z2 = tf.add(tf.matmul(W2,A1), b2)
+    A2 = tf.nn.relu(Z2)
+    Z3 = tf.add(tf.matmul(W3,A2), b3)
+    
+    return Z3
+
+
+def compute_cost(Z3, Y):
+    """
+    Computes the cost
+    
+    Arguments:
+    Z3 -- output of forward propagation (output of the last LINEAR unit)
+    Y -- "true" labels vector placeholder, same shape as Z3
+    
+    Returns:
+    cost - Tensor of the cost function
+    """
+    
+    logits = tf.transpose(Z3)
+    labels = tf.transpose(Y)
+    
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits = logits, labels = labels))
+    
+    return cost
+
+def model(X_train, Y_train, learning_rate = 0.0001,
+          num_epochs = 1500, minibatch_size = 32, print_cost = True):
+    """
+    A three-layer tensorflow neural network: LINEAR->RELU->LINEAR->RELU->LINEAR->SOFTMAX.
+    
+    Arguments:
+    X_train -- training set
+    Y_train -- test set
+    learning_rate -- learning rate of the optimization
+    num_epochs -- number of epochs of the optimization loop
+    minibatch_size -- size of a minibatch
+    print_cost -- True to print the cost every 100 epochs
+    
+    Returns:
+    parameters -- parameters learnt by the model. They can then be used to predict.
+    """
+    
+    ops.reset_default_graph()
+    (n_x, m) = X_train.shape
+    n_y = Y_train.shape[0]
+    costs = []
+    
+    X, Y = create_placeholders(n_x, n_y)
+
+    parameters = initialize_parameters(n_x, n_y)
+    
+    Z3 = forward_propagation(X, parameters)
+    
+    cost = compute_cost(Z3, Y)
+
+    optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
+    
+    init = tf.global_variables_initializer()
+
+    with tf.Session() as sess:
+        
+        sess.run(init)
+        
+        for epoch in range(num_epochs):
+
+            epoch_cost = 0.
+            num_minibatches = int(m / minibatch_size)
+            minibatches = random_mini_batches(X_train, Y_train, minibatch_size)
+
+            for minibatch in minibatches:
+
+                (minibatch_X, minibatch_Y) = minibatch
+                
+                _ , minibatch_cost = sess.run([optimizer, cost], feed_dict={X: minibatch_X, Y: minibatch_Y})
+                
+                epoch_cost += minibatch_cost / num_minibatches
+
+            # Print the cost every epoch
+            if print_cost == True and epoch % 100 == 0:
+                print ("Cost after epoch %i: %f" % (epoch, epoch_cost))
+            if print_cost == True and epoch % 5 == 0:
+                costs.append(epoch_cost)
+                
+        # plot the cost
+        #plt.plot(np.squeeze(costs[1:]))
+        plt.plot(np.squeeze(costs[1:]))
+        
+        plt.ylabel('cost')
+        plt.xlabel('iterations (per tens)')
+        plt.title("Learning rate =" + str(learning_rate))
+        plt.show()
+
+        # lets save the parameters in a variable
+        parameters = sess.run(parameters)
+        print ("Parameters have been trained!")
+
+        # Calculate the correct predictions
+        correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))
+
+        # Calculate accuracy on the test set
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+
+        print ("Train Accuracy:", accuracy.eval({X: X_train, Y: Y_train}))
+        
+        return parameters
+    
 
 if __name__ == "__main__":
     
@@ -89,12 +283,24 @@ if __name__ == "__main__":
     string_labels = ['flag_fthb','occpy_sts','channel','ppmt_pnlty','prod_type','st', \
                   'prop_type','loan_purpose','seller_name','servicer_name', 'flag_sc']
     X_train = input_transco.label_to_num(orig_data, string_labels)
-    X_train.fillna(0)
+    X_train = X_train.fillna(0)
     
     #Getting the ouput for the Training Set
     mth_data = pd.read_csv('sample_svcg_2016.txt', header = None, sep = '|')
     Y_train = data_processor.get_training_output(mth_data)
     Y_train = Y_train.reindex(X_train.index)
     
+    #Transpose format, switch to numpy
+    X_train = X_train.T.values
+    Y_train = Y_train.T.values
     
+    Y_train = Y_train.astype(int)
+    Y_train = convert_to_one_hot(Y_train, 7)
+    
+    #
+    n_x = X_train.shape[0]
+    n_y = Y_train.shape[0]
+    X, Y = create_placeholders(n_x, n_y)
+    
+    parameters = model(X_train, Y_train)
     
