@@ -6,6 +6,7 @@ Version: python3
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 CUT_OFF_DATE = "201803"
 
@@ -40,7 +41,7 @@ def get_training_output(mth_data):
     '''
     
     ####Getting Training Ouputs
-    #Selecting the data before 2018
+    #Selecting the data before 2017
     train_set = mth_data[np.around(mth_data[1]/100, decimals=1) <2017]
     #Getting the list of defaulting loans IDs, by looking if the defaulting date is empty or not
     dflt_loans = train_set[train_set[9].notnull()][0]
@@ -58,6 +59,8 @@ def get_training_output(mth_data):
     
     return Y_train
 
+
+
 def get_test_output(mth_data):
     ''' Outputs management
         Arguments:
@@ -71,7 +74,7 @@ def get_test_output(mth_data):
         10th column is the zero balance effective date
     '''
     ####Getting Test Ouputs
-    #Selecting the data after 2018
+    #Selecting the data after 2017
     test_set = mth_data[np.around(mth_data[1]/100, decimals=1) == 2017]
     #Getting the list of defaulting loans IDs
     dflt_loans = test_set[test_set[9].notnull()][0]
@@ -88,8 +91,46 @@ def get_test_output(mth_data):
     
     return Y_test
 
+def formatting_ouput(Y):
+    pass
+
+def aggregate(year):
+    data = pd.read_csv("historical_data1_time_Q" + str(1) + str(year) + ".txt", header = None, sep = '|')
+    for quarter in range(2,5):
+        data.append(pd.read_csv("historical_data1_time_Q" + str(quarter) + str(year) + ".txt", header = None, sep = '|'))
+
+    return data
+
+def switch_to_binary(Y_train):
+    return pd.DataFrame(Y_train['outputs'].apply(lambda x: 0 if x == 0 else 1), columns = ['outputs'])
+
+def get_training_output_binary(mth_data):
+    Y = get_training_output(mth_data)
+    return switch_to_binary(Y)
+    
+def get_test_output_binary(mth_data):
+    Y = get_test_output(mth_data)
+    return switch_to_binary(Y)
+
+
+
 
 if __name__ == "__main__":
-    mth_data = pd.read_csv('sample_svcg_2016.txt', header = None, sep = '|')
+    year = 2016
+    #mth_data = pd.read_csv('sample_svcg_2016.txt', header = None, sep = '|')
+    mth_data = aggregate(year)
     Y_train = get_training_output(mth_data)
-    Y_train.head()
+    #print(Y_train.head())
+    
+    hist = Y_train.hist()
+    for x in hist[0]:
+        x.set_xlabel("Default Types")
+        x.set_ylabel("Number of Loans")
+        x.set_title("Class repartition for " + str(year))
+    
+    Y_train = switch_to_binary(Y_train)
+    
+    
+    dft = Y_train[Y_train['outputs'] == 1].count()
+    ndft = Y_train[Y_train['outputs'] == 0].count()
+    

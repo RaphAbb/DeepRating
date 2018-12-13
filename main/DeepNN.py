@@ -1,12 +1,11 @@
 """
 Author: Raphael Abbou
 Version: python3
+DeepNN Code is inspired by Andrew Ng's course Notebooks
 """
 
-import math
 import numpy as np
 import pandas as pd
-import h5py
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.python.framework import ops
@@ -186,6 +185,7 @@ def compute_cost(Z3, Y):
     
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits = logits, labels = labels))
     
+    
     return cost
 
 def model(X_train, Y_train, X_test, Y_test, costs, learning_rate = 0.001,#learning_rate = 0.0001,
@@ -259,8 +259,8 @@ def model(X_train, Y_train, X_test, Y_test, costs, learning_rate = 0.001,#learni
         print ("Parameters have been trained!")
 
         # Calculate the correct predictions
-        #correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))
-        correct_prediction = tf.equal(tf.argmax(Z3[1:,]), tf.argmax(Y[1:,]))
+        correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))
+        #correct_prediction = tf.equal(tf.argmax(Z3[1:,]), tf.argmax(Y[1:,]))
 
         # Calculate accuracy on the test set
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
@@ -283,12 +283,14 @@ if __name__ == "__main__":
     #Transforming string values to Numerical Values
     string_labels = ['flag_fthb','occpy_sts','channel','ppmt_pnlty','prod_type','st', \
                   'prop_type','loan_purpose','seller_name','servicer_name', 'flag_sc']
-    X_train = input_transco.label_to_num(orig_data, string_labels)
+    dic_transco_dic, X_train = input_transco.label_to_num(orig_data, string_labels)
+    X_train = X_train.fillna(0)
+    X_train = input_transco.normalize(X_train)
     X_train = X_train.fillna(0)
     
     #Getting the ouput for the Training Set
     mth_data = pd.read_csv('sample_svcg_2016.txt', header = None, sep = '|')
-    Y_train = data_processor.get_training_output(mth_data)
+    Y_train = data_processor.get_training_output_binary(mth_data)
     Y_train = Y_train.reindex(X_train.index)
     #PB here, so add this line in meantine
     Y_train = Y_train.fillna(0)
@@ -310,12 +312,14 @@ if __name__ == "__main__":
     #Transforming string values to Numerical Values
     string_labels = ['flag_fthb','occpy_sts','channel','ppmt_pnlty','prod_type','st', \
                   'prop_type','loan_purpose','seller_name','servicer_name', 'flag_sc']
-    X_test= input_transco.label_to_num(orig_data_test, string_labels)
+    X_test= input_transco.label_to_num_test(orig_data_test, string_labels, dic_transco_dic)
+    X_test = X_test.fillna(0)
+    X_test = input_transco.normalize(X_test)
     X_test = X_test.fillna(0)
     
     #Getting the ouput for the Training Set
     mth_data_test = pd.read_csv('sample_svcg_2017.txt', header = None, sep = '|')
-    Y_test = data_processor.get_test_output(mth_data_test)
+    Y_test = data_processor.get_test_output_binary(mth_data_test)
     Y_test = Y_test.reindex(X_test.index)
     #PB here, so add this line in meantine
     Y_test = Y_test.fillna(0)
