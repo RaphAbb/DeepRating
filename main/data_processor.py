@@ -42,7 +42,7 @@ def get_training_output(mth_data):
     
     ####Getting Training Ouputs
     #Selecting the data before 2017
-    train_set = mth_data[np.around(mth_data[1]/100, decimals=1) <2017]
+    train_set = mth_data[np.around(mth_data[1]/100, decimals=1) <2016]
     #Getting the list of defaulting loans IDs, by looking if the defaulting date is empty or not
     dflt_loans = train_set[train_set[9].notnull()][0]
     #Getting the associated zero balance code, when the defaulting date is not empty
@@ -75,7 +75,7 @@ def get_test_output(mth_data):
     '''
     ####Getting Test Ouputs
     #Selecting the data after 2017
-    test_set = mth_data[np.around(mth_data[1]/100, decimals=1) == 2017]
+    test_set = mth_data[np.around(mth_data[1]/100, decimals=1) >= 2016]
     #Getting the list of defaulting loans IDs
     dflt_loans = test_set[test_set[9].notnull()][0]
     #Getting the associated zero balance code
@@ -97,8 +97,10 @@ def formatting_ouput(Y):
 def aggregate(year):
     data = pd.read_csv("historical_data1_time_Q" + str(1) + str(year) + ".txt", header = None, sep = '|')
     for quarter in range(2,5):
-        data.append(pd.read_csv("historical_data1_time_Q" + str(quarter) + str(year) + ".txt", header = None, sep = '|'))
-
+        try:
+            data.append(pd.read_csv("historical_data1_time_Q" + str(quarter) + str(year) + ".txt", header = None, sep = '|'))
+        except:
+            pass
     return data
 
 def switch_to_binary(Y_train):
@@ -116,11 +118,15 @@ def get_test_output_binary(mth_data):
 
 
 if __name__ == "__main__":
-    year = 2016
-    #mth_data = pd.read_csv('sample_svcg_2016.txt', header = None, sep = '|')
+#    year = 2016
+#    #mth_data = pd.read_csv('sample_svcg_2016.txt', header = None, sep = '|')
+#    mth_data = aggregate(year)
+#    Y_train = get_training_output(mth_data)
+#    #print(Y_train.head())
+    
+    year = 2017
     mth_data = aggregate(year)
-    Y_train = get_training_output(mth_data)
-    #print(Y_train.head())
+    Y_train = get_test_output(mth_data)
     
     hist = Y_train.hist()
     for x in hist[0]:

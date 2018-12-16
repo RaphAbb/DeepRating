@@ -103,6 +103,15 @@ def managing_NA(X):
 def normalize(X):
     return (X-X.mean())/X.std()
 
+def aggregate(year):
+    data = pd.read_csv("historical_data1_Q" + str(1) + str(year) + ".txt", header = None, sep = '|', index_col = 19)
+    for quarter in range(2,5):
+        try:
+            data.append(pd.read_csv("historical_time_Q" + str(quarter) + str(year) + ".txt", header = None, sep = '|', index_col = 19))
+        except:
+            pass
+    return data
+
 
 if __name__ == "__main__":
     orig_col = ['fico','dt_first_pi','flag_fthb','dt_matr','cd_msa',"mi_pct",'cnt_units','occpy_sts',\
@@ -110,7 +119,8 @@ if __name__ == "__main__":
                   'prop_type','zipcode','loan_purpose', 'orig_loan_term','cnt_borr','seller_name'\
                   ,'servicer_name', 'flag_sc']
     
-    orig_data = pd.read_csv('sample_orig_2016.txt', header = None, sep = '|', index_col = 19)
+    #orig_data = pd.read_csv('sample_orig_2016.txt', header = None, sep = '|', index_col = 19)
+    orig_data = aggregate(2016)
     orig_data.columns = orig_col
 
     
@@ -124,7 +134,8 @@ if __name__ == "__main__":
     
     
     #Test Set
-    orig_data_test = pd.read_csv('sample_orig_2017.txt', header = None, sep = '|', index_col = 19)
+    #orig_data_test = pd.read_csv('sample_orig_2017.txt', header = None, sep = '|', index_col = 19)
+    orig_data_test = aggregate(2017)
     orig_data_test.columns = orig_col
     
     #Transforming string values to Numerical Values
